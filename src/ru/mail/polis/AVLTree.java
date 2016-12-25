@@ -85,16 +85,12 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         }
         inorderTraverse(curr.left, list);
         list.add(curr.value);
-        System.out.println(height(curr));
         inorderTraverse(curr.right, list);
     }
 
     @Override
     public int size() {
-        if (size > 0) {
-            return size;
-        }
-        return Integer.MAX_VALUE;
+        return (size > 0) ? size : Integer.MAX_VALUE;
     }
 
     @Override
@@ -123,56 +119,22 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         return false;
     }
 
-    @Override
-    public boolean add(E value) {
-        //Сначала вставляем как в обычном бинарном дереве
-        if (value == null) {
-            throw new NullPointerException("value is null");
-        }
-        if (root == null) {
-            root = new Node(value);
-
-        } else {
-            Node curr = root;
-            Node parent;
-            while (true){
-                if (curr.value == value)
-                    return false;
-
-                parent = curr;
-
-                boolean toLeft = compare(curr.value, value) > 0;
-                curr = toLeft ? curr.left : curr.right;
-
-                if (curr == null){
-                    if (toLeft){
-                        parent.left = new Node(value, parent);
-                    } else {
-                        parent.right = new Node(value, parent);
-                    }
-                    rebalance(parent);
-                    break;
-                }
-            }
-        }
-        size++;
-        return true;
-    }
-
     /**
      * Balance the tree starting from the given node
      * @param node node, which we want to rebalance
      */
     private void rebalance(Node node){
         setBalance(node);
+
         //Перевешено влево...
         if (node.balance == -2){
             //...а левый сын влево
-            if (height(node.left.left) >= height(node.left.right))
+            if (height(node.left.left) >= height(node.left.right)) {
                 node = rotateRight(node);
-            else
-            //.. а левый сын вправо
-                node = rotateLeftThenRight(node);
+            } else {
+                //.. а левый сын вправо
+                node = bigRotateLeft(node);
+            }
             //Перевешено вправо...
         } else if (node.balance == 2) {
             //...а правый сын вправо
@@ -180,7 +142,7 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
                 node = rotateLeft(node);
             else
                 //...а правый сын влево
-                node = rotateRightThenLeft(node);
+                node = bigRotateRight(node);
         }
 
         if (node.parent != null){
@@ -195,7 +157,7 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         y.parent = x.parent;
         //Перекинем ветку
         x.right = y.left;
-        //Подкорректируем указатель на родителя ветке
+        //Подкорректируем указатель на родительской ветке
         if (x.right != null)
             x.right.parent = x;
         //Поворот
@@ -210,11 +172,13 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
             }
         }
 
-        setBalance(x, y);
+        setBalance(x);
+        setBalance(y);
 
         return y;
     }
 
+    //Малый поворот вправо
     private Node rotateRight(Node x) {
         Node y = x.left;
         y.parent = x.parent;
@@ -235,74 +199,33 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
             }
         }
 
-        setBalance(x, y);
+        setBalance(x);
+        setBalance(y);
 
         return y;
     }
 
-    private Node rotateLeftThenRight(Node node) {
+    //Большой поворот влево
+    private Node bigRotateLeft(Node node) {
         node.left = rotateLeft(node.left);
         return rotateRight(node);
     }
 
-    private Node rotateRightThenLeft(Node node) {
+    //Большой поворот вправо
+    private Node bigRotateRight(Node node) {
         node.right = rotateRight(node.right);
         return rotateLeft(node);
     }
 
-    private void setBalance(Node... nodes){
-        for (Node node : nodes){
-            node.balance = height(node.right) - height(node.left);
-        }
+    private void setBalance(Node node){
+        node.balance = height(node.right) - height(node.left);
     }
 
     private int height(Node node){
-        if (node == null)
-            return -1;
-        return 1 + Math.max(height(node.left), height(node.right));
-    }
-
-    @Override
-    public boolean remove(E value) {
-        if (value == null)
-            throw new NullPointerException("value is null");
-        if (root == null)
-            return false;
-
-        Node node = root;
-        Node parent = root;
-        Node deletedNode = null;
-        Node child = root;
-        //Найдем значение как обычно
-        while (child != null){
-            parent = node;
-            node = child;
-            child = compare(value, node.value) >= 0 ? node.right : node.left;
-            if (value == node.value){
-                deletedNode = node;
-            }
+        if (node == null){
+            return 0;
         }
-        //Если нашли
-        if (deletedNode != null) {
-            deletedNode.value = node.value;
-
-            child = node.left != null ? node.left : node.right;
-
-            //Если корень удаляем
-            if (root.value == value) {
-                root = child;
-            } else {
-                if (parent.left == node) {
-                    parent.left = child;
-                } else {
-                    parent.right = child;
-                }
-                rebalance(parent);
-            }
-            size--;
-            return true;
-        }
-        return false;
+        return Math.max(height(node.left), height(node.right)) + 1;
     }
 
     private int compare(E v1, E v2) {
@@ -311,6 +234,109 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
 
     public String toString() {
         return "BST{" + root + "}";
+    }
+
+
+    @Override
+    public boolean remove(E value) {
+        if (value == null) {
+            throw new NullPointerException("value is null");
+        }
+        if (root == null) {
+            return false;
+        }
+        Node parent = root;
+        Node curr = root;
+        int cmp;
+        while ((cmp = compare(curr.value, value)) != 0) {
+            parent = curr;
+            if (cmp > 0) {
+                curr = curr.left;
+            } else {
+                curr = curr.right;
+            }
+            if (curr == null) {
+                return false; // ничего не нашли
+            }
+        }
+        if (curr.left != null && curr.right != null) {
+            Node next = curr.right;
+            Node pNext = curr;
+            while (next.left != null) {
+                pNext = next;
+                next = next.left;
+            } //next = наименьший из больших
+            curr.value = next.value;
+            next.value = null;
+            //у правого поддерева нет левых потомков
+            if (pNext == curr) {
+                curr.right = next.right;
+            } else {
+                pNext.left = next.right;
+            }
+            next.right = null;
+        } else {
+            if (curr.left != null) {
+                reLink(parent, curr, curr.left);
+            } else if (curr.right != null) {
+                reLink(parent, curr, curr.right);
+            } else {
+                reLink(parent, curr, null);
+            }
+        }
+
+        rebalance(parent);
+        size--;
+        return true;
+    }
+
+    private void reLink(Node parent, Node curr, Node child) {
+        if (parent == curr) {
+            root = child;
+            curr = child;
+            return;
+        } else if (parent.left == curr) {
+            parent.left = child;
+        } else {
+            parent.right = child;
+        }
+        curr.value = null;
+
+    }
+
+
+    @Override
+    public boolean add(E value) {
+        if (value == null)
+            throw new NullPointerException("value is null");
+        if (root == null){
+            root = new Node(value);
+        } else {
+            Node curr = root;
+            while (true) {
+                int cmp = compare(curr.value, value);
+                if (cmp == 0) {
+                    return false;
+                } else if (cmp < 0) {
+                    if (curr.right == null) {
+                        curr.right = new Node(value, curr);
+                        curr = curr.right;
+                        break;
+                    }
+                    curr = curr.right;
+                } else {
+                    if (curr.left == null) {
+                        curr.left = new Node(value, curr);
+                        curr = curr.left;
+                        break;
+                    }
+                    curr = curr.left;
+                }
+            }
+            rebalance(curr.parent);
+        }
+        size++;
+        return true;
     }
 
     public static void main(String[] args) {
@@ -336,7 +362,8 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         Random rnd = new Random();
         tree = new AVLTree<>();
         for (int i = 0; i < 15; i++) {
-            tree.add(15);
+            tree.add(rnd.nextInt(100));
+            System.out.println(tree);
         }
         System.out.println(tree);
         System.out.println(tree.inorderTraverse());
