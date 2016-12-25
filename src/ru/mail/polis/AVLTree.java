@@ -2,7 +2,6 @@ package ru.mail.polis;
 
 import java.util.*;
 
-//TODO: write code here
 public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
 
     private Node root;
@@ -233,7 +232,7 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
     }
 
     public String toString() {
-        return "BST{" + root + "}";
+        return "AVL{" + root + "}";
     }
 
 
@@ -277,31 +276,30 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
             next.right = null;
         } else {
             if (curr.left != null) {
+                rebalance(parent);
                 reLink(parent, curr, curr.left);
             } else if (curr.right != null) {
+                rebalance(parent);
                 reLink(parent, curr, curr.right);
             } else {
+                rebalance(parent);
                 reLink(parent, curr, null);
             }
         }
 
-        rebalance(parent);
         size--;
         return true;
     }
 
     private void reLink(Node parent, Node curr, Node child) {
-        if (parent == curr) {
+        if (curr == parent){
             root = child;
-            curr = child;
-            return;
         } else if (parent.left == curr) {
             parent.left = child;
         } else {
             parent.right = child;
         }
         curr.value = null;
-
     }
 
 
@@ -341,31 +339,26 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
 
     public static void main(String[] args) {
         AVLTree<Integer> tree = new AVLTree<>();
-        tree.add(10);
         tree.add(5);
-        tree.add(15);
-        System.out.println(tree.inorderTraverse());
-        System.out.println(tree.size);
         System.out.println(tree);
-        tree.remove(10);
-        tree.remove(15);
-        System.out.println(tree.size);
+        tree.add(100);
         System.out.println(tree);
-        tree.remove(5);
-        System.out.println(tree.size);
+        tree.add(20);
         System.out.println(tree);
         tree.add(15);
-        System.out.println(tree.size);
         System.out.println(tree);
+        tree.add(16);
+        System.out.println(tree);
+        tree.add(3);
+        System.out.println(tree);
+        tree.add(8);
+        System.out.println(tree);
+        tree.add(50);
+        System.out.println(tree);
+        tree.add(80);
+        System.out.println(tree);
+        System.out.println(tree.remove(15));
+        System.out.println(tree.remove(15));
 
-        System.out.println("------------");
-        Random rnd = new Random();
-        tree = new AVLTree<>();
-        for (int i = 0; i < 15; i++) {
-            tree.add(rnd.nextInt(100));
-            System.out.println(tree);
-        }
-        System.out.println(tree);
-        System.out.println(tree.inorderTraverse());
     }
 }
