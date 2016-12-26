@@ -123,6 +123,8 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
      * @param node node, which we want to rebalance
      */
     private void rebalance(Node node){
+        if (node == null)
+            return;
         setBalance(node);
 
         //Перевешено влево...
@@ -144,7 +146,7 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
                 node = bigRotateRight(node);
         }
 
-        if (node.parent != null){
+        if (node.parent != null) {
             rebalance(node.parent);
         } else {
             root = node;
@@ -276,30 +278,38 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
             next.right = null;
         } else {
             if (curr.left != null) {
-                rebalance(parent);
-                reLink(parent, curr, curr.left);
+                curr = reLink(parent, curr, curr.left);
             } else if (curr.right != null) {
-                rebalance(parent);
-                reLink(parent, curr, curr.right);
+                curr = reLink(parent, curr, curr.right);
             } else {
-                rebalance(parent);
-                reLink(parent, curr, null);
+                curr = reLink(parent, curr, null);
             }
         }
 
+        rebalance(curr);
         size--;
         return true;
     }
 
-    private void reLink(Node parent, Node curr, Node child) {
-        if (curr == parent){
+
+    private Node reLink(Node parent, Node curr, Node child) {
+        boolean parentIsRoot = parent == curr;
+        if (parentIsRoot) {
             root = child;
+
         } else if (parent.left == curr) {
             parent.left = child;
         } else {
             parent.right = child;
         }
         curr.value = null;
+        if ((curr.left != null || curr.right != null) && parentIsRoot){
+            curr = curr.left == null ? curr.right : curr.left;
+            curr.parent = null;
+        }
+        if (curr.value == null)
+            curr = null;
+        return curr;
     }
 
 
@@ -338,27 +348,47 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
     }
 
     public static void main(String[] args) {
-        AVLTree<Integer> tree = new AVLTree<>();
-        tree.add(5);
-        System.out.println(tree);
-        tree.add(100);
-        System.out.println(tree);
-        tree.add(20);
-        System.out.println(tree);
-        tree.add(15);
-        System.out.println(tree);
-        tree.add(16);
-        System.out.println(tree);
-        tree.add(3);
-        System.out.println(tree);
-        tree.add(8);
-        System.out.println(tree);
-        tree.add(50);
-        System.out.println(tree);
-        tree.add(80);
-        System.out.println(tree);
-        System.out.println(tree.remove(15));
-        System.out.println(tree.remove(15));
+        ISortedSet<Integer> set = new AVLTree<>();
+        for (int i = 0; i < 10; i++) set.add(i);
+        for (int i = 10; i >= 6; i--) {
+            set.remove(i);
+            System.out.print(set.first() + " "); //0 0 0 0 4
+        }
+        set = new AVLTree<>();
+        for (int i = 0; i < 100; i++) set.add(0);
+        System.out.println(set.size());
+        Random random = new Random();
+        SortedSet<Integer> OK = new TreeSet<>();
+        set = new AVLTree<>();
+        for (int i = 0; i < 100000; i++) {
+            int next = random.nextInt(1000);
+            assert OK.add(next) == set.add(next);
+        }
+
+        set = new AVLTree<>();
+        for (int i = 0; i < 1000; i++) {
+            set.add(random.nextInt(100));
+            System.out.println(set.inorderTraverse());
+        }
+        for (int i = 0; i < 1000; i++) {
+            set.remove(random.nextInt(100));
+        }
+
+        set = new AVLTree<>();
+        set.add(10);
+        System.out.println(set);
+        set.add(15);
+        System.out.println(set);
+        set.add(5);
+        System.out.println(set);
+        set.remove(5);
+        System.out.println(set);
+        set.remove(10);
+        System.out.println(set);
+        set.remove(15);
+        System.out.println(set);
 
     }
+
+
 }
