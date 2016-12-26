@@ -41,10 +41,12 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
 
     public AVLTree() {
         this.comparator = null;
+        size = 0;
     }
 
     public AVLTree(Comparator<E> comparator) {
         this.comparator = comparator;
+        size = 0;
     }
 
     @Override
@@ -89,7 +91,9 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
 
     @Override
     public int size() {
-        return (size > 0) ? size : Integer.MAX_VALUE;
+        if (size >= 0)
+            return size;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -368,7 +372,7 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         set = new AVLTree<>();
         for (int i = 0; i < 1000; i++) {
             set.add(random.nextInt(100));
-            System.out.println(set.inorderTraverse());
+            System.out.println(set.size());
         }
         for (int i = 0; i < 1000; i++) {
             set.remove(random.nextInt(100));
@@ -377,17 +381,25 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         set = new AVLTree<>();
         set.add(10);
         System.out.println(set);
+        System.out.println(set.size());
         set.add(15);
         System.out.println(set);
+        System.out.println(set.size());
         set.add(5);
         System.out.println(set);
+        System.out.println(set.size());
         set.remove(5);
         System.out.println(set);
+        System.out.println(set.size());
         set.remove(10);
         System.out.println(set);
+        System.out.println(set.size());
         set.remove(15);
         System.out.println(set);
+        System.out.println(set.size());
 
+        set = new AVLTree<>();
+        System.out.println(set.size());
     }
 
 
