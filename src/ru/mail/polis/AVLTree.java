@@ -127,10 +127,7 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
      * @param node node, which we want to rebalance
      */
     private void rebalance(Node node){
-        if (node == null)
-            return;
         setBalance(node);
-
         //Перевешено влево...
         if (node.balance == -2){
             //...а левый сын влево
@@ -241,45 +238,106 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         return "AVL{" + root + "}";
     }
 
-
     @Override
     public boolean remove(E value) {
         if (value == null) {
             throw new NullPointerException("value is null");
         }
-        if (root == null) {
-            return false;
-        }
 
-        Node nodeToDel = null;
-        Node child = root;
-        Node curr = root;
-        int cmp;
-
-        Node parentNode = root;
-        //Ищем ноду
-        while (child != null) {
-            parentNode = curr;
-            curr = child;
-            cmp = compare(value, curr.value);
-            if (cmp >= 0) child = child.right;
-            else child = curr.left;
-            if (value == curr.value)
-                nodeToDel = curr;
-        }
-
-        //Не нашли
-        if (nodeToDel == null)
-            return false;
-
-        nodeToDel.value = curr.value;
-        child = curr.left != null ? curr.left : curr.right;
-
-        reLink(parentNode, curr, child, value);
-
-        size--;
-        return true;
+        boolean res = recurrRemove(this.root, value);
+        if (res) size--;
+        return res;
     }
+
+    public boolean recurrRemove(Node node, E value) {
+        boolean delFlag;
+        if (node == null) {
+            delFlag = false;
+
+        } else {
+
+            int cmp = compare(node.value, value);
+            if(cmp > 0)  {
+                delFlag = recurrRemove(node.left, value);
+            } else if(cmp < 0) {
+                delFlag = recurrRemove(node.right, value);
+            } else { //value == p.value
+                removeNode(node);
+                delFlag = true;
+            }
+        }
+        return delFlag;
+    }
+
+    public void removeNode(Node node) {
+        Node replaceNode;
+        //Есть хотя бы один сын
+        if ((node.left == null) || (node.right == null)) {
+            //Корень дерева
+            if (node.parent == null) {
+                //Если у корня есть левый сын то мы просто заменим им корень
+                if (node.left != null){
+                    root = node.left;
+                    root.parent = null;
+                    //То же и с правым сыном
+                } else if (node.right != null){
+                    root = node.right;
+                    root.parent = null;
+                } else {
+                    //Если же нет сыновей, то просто удалим корень
+                    root = null;
+                }
+                return;
+            }
+            //Если же нода - не корень, нам надо искать замену
+            replaceNode = node;
+        } else {
+            replaceNode = getSuccessor(node);
+            node.value = replaceNode.value;
+        }
+        Node curr;
+        if(replaceNode.left != null) {
+            curr = replaceNode.left;
+        } else {
+            curr = replaceNode.right;
+        }
+
+        if(curr != null) {
+            curr.parent = replaceNode.parent;
+        }
+
+        if(replaceNode.parent == null) {
+            root = curr;
+        } else {
+            if(replaceNode.parent.left == replaceNode) {
+                replaceNode.parent.left = curr;
+            } else {
+                replaceNode.parent.right = curr;
+            }
+            rebalance(replaceNode.parent);
+        }
+    }
+
+    public Node getSuccessor(Node node) {
+        if (node.right != null) {
+            Node r = node.right;
+
+            while(r.left != null) {
+                r = r.left;
+            }
+            return r;
+
+        } else {
+
+            Node parent = node.parent;
+            while(parent != null && node == parent.right) {
+                node = parent;
+                parent = node.parent;
+            }
+            return parent;
+        }
+    }
+
 
     private void reLink(Node parent, Node curr, Node child, E value) {
         if (root.value == value) {
@@ -329,9 +387,12 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         return true;
     }
 
+
     public static void main(String[] args) {
-        ISortedSet<Integer> set = new AVLTree<>();
+        ISortedSet<Integer> set;
         Random random = new Random();
+        SortedSet<Integer> OK = new TreeSet<>();
+
 
         int LEN = 10;
         set = new AVLTree<>();
@@ -352,7 +413,6 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         System.out.println();
         set = new AVLTree<>();
         for (int i = 0; i < 100; i++) set.add(0);
-        SortedSet<Integer> OK = new TreeSet<>();
         set = new AVLTree<>();
         for (int i = 0; i < 100000; i++) {
             int next = random.nextInt(1000);
@@ -390,25 +450,6 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         set = new AVLTree<>();
         System.out.println(set.size());
 
-        int failedNPERemove = 0;
-        for (int k = 0; k < 10000; k++) {
-            set = new AVLTree<>();
-            for (int i = 0; i < 1000; i++) {
-                int value = random.nextInt(1000);
-                set.add(value);
-            }
-            for (int i = 0; i < 1000; i++) {
-                try {
-                    int value = random.nextInt(1000);
-                    set.remove(value);
-                    set.contains(value); //< NPE
-                } catch (NullPointerException e) {
-                    failedNPERemove++;
-                }
-            }
-        }
-        System.out.println(failedNPERemove);//0
-
         set = new AVLTree<>();
         System.out.println(set.add(20));//true
         System.out.println(set.add(20));//false
@@ -431,6 +472,97 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         System.out.println(set.remove(20));
         System.out.println(set.remove(20));
         System.out.println(set.remove(20));
+
+        set = new AVLTree<>();
+        for (int i = 0; i < 1000; i++) set.add(random.nextInt(1000));
+        for (int i = 0; i < 800; i++) set.remove(random.nextInt(1000));
+        System.out.println(set.inorderTraverse());
+
+        set = new AVLTree<>();
+        assert (set.add(0) == true); //true
+        assert (set.remove(0) == true); //true
+        assert (set.remove(0) == false);
+        set.add(10);
+        System.out.println(set);
+        set.add(18);
+        System.out.println(set);
+        set.add(14);
+        System.out.println(set);
+        set.add(145);
+        System.out.println(set);
+        set.add(143);
+        assert (set.add(143)==false);
+        set.add(104);
+        set.add(4);
+        set.add(13);
+        System.out.println(set);
+        set.remove(104);
+        set.remove(13);
+        set.remove(4);
+        assert (set.remove(2)==false) ;
+        System.out.println(set);
+        set.remove(21);
+        set.remove(0);
+        set.remove(143);
+        set.remove(14);
+        set.remove(10);
+
+        System.out.println("OK");
+
+        int failedNPERemove = 0;
+        for (int k = 0; k < 1000; k++) {
+            set = new AVLTree<>();
+            for (int i = 0; i < 1000 ; i++) {
+                int value = random.nextInt(1000);
+                set.add(value);
+            }
+            for (int i = 0; i < 1000; i++) {
+                try {
+                    int value = random.nextInt(1000);
+                    set.remove(value);
+                    set.contains(value); //< NPE
+                } catch (NullPointerException e) {
+                    failedNPERemove++;
+                }
+            }
+        }
+        System.out.println(failedNPERemove);
+
+        LEN = 10;
+        set = new AVLTree<>();
+        for (int value = 0; value < LEN; value++) {
+            set.add(value);
+        }
+        for (int value = LEN; value >= 0; value--) {
+            System.out.println(value + ": " + set.contains(value)
+                    + ", " + set.remove(value) + ", " + set.contains(value));
+        }
+
+        set = new AVLTree<>();
+        System.out.println(set.size()); //=2147483647
+
+        set = new AVLTree<>();
+        for (int i = 0; i < 10; i++) set.add(i);
+        for (int i = 10; i >= 6; i--) {
+            set.remove(i);
+            System.out.print(set.first() + " "); //0 0 0 0 4
+        }
+
+        set = new AVLTree<>();
+        set.add(13);
+        set.add(11);
+        set.add(15);
+        set.add(11);
+        set.add(10);
+        set.add(9);
+        set.add(22);
+        set.add(300);
+        set.add(0);
+        set.add(30);
+        set.remove(20);
+        set.remove(9);
+        set.remove(12);
+        System.out.println(set.inorderTraverse());
     }
 
 }
