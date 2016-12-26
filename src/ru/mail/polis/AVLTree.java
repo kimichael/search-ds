@@ -256,8 +256,10 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         Node curr = root;
         int cmp;
 
+        Node parentNode = root;
         //Ищем ноду
         while (child != null) {
+            parentNode = curr;
             curr = child;
             cmp = compare(value, curr.value);
             if (cmp >= 0) child = child.right;
@@ -270,11 +272,10 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         if (nodeToDel == null)
             return false;
 
-        Node parent = curr.parent;
         nodeToDel.value = curr.value;
         child = curr.left != null ? curr.left : curr.right;
 
-        reLink(parent, curr, child, value);
+        reLink(parentNode, curr, child, value);
 
         size--;
         return true;
@@ -332,15 +333,25 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         ISortedSet<Integer> set = new AVLTree<>();
         Random random = new Random();
 
-        for (int i = 0; i < 100; i++) set.add(i);
-        for (int i = 100; i >= 60; i--) {
+        int LEN = 10;
+        set = new AVLTree<>();
+        for (int value = 0; value <= LEN; value++) {
+            set.add(value);
+        }
+        for (int value = LEN; value >= 0; value--) {
+            System.out.println(value + ": " + set.contains(value)
+                    + ", " + set.remove(value) + ", " + set.contains(value));
+        }
+
+        set = new AVLTree<>();
+        for (int i = 0; i < 10; i++) set.add(i);
+        for (int i = 10; i >= 6; i--) {
             set.remove(i);
-            System.out.print(set.first() + " "); //0 0 0 0 4
+            System.out.println(set.first() + " " + set.last()); //0 0 0 0 4
         }
         System.out.println();
         set = new AVLTree<>();
         for (int i = 0; i < 100; i++) set.add(0);
-        System.out.println(set.size());
         SortedSet<Integer> OK = new TreeSet<>();
         set = new AVLTree<>();
         for (int i = 0; i < 100000; i++) {
@@ -351,7 +362,6 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         set = new AVLTree<>();
         for (int i = 0; i < 100000; i++) {
             set.add(random.nextInt(100));
-            System.out.println(set.size());
         }
         for (int i = 0; i < 100000; i++) {
             set.remove(random.nextInt(100));
@@ -381,7 +391,7 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         System.out.println(set.size());
 
         int failedNPERemove = 0;
-        for (int k = 0; k < 1000; k++) {
+        for (int k = 0; k < 10000; k++) {
             set = new AVLTree<>();
             for (int i = 0; i < 1000; i++) {
                 int value = random.nextInt(1000);
@@ -397,9 +407,11 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
                 }
             }
         }
-        System.out.println(failedNPERemove);
+        System.out.println(failedNPERemove);//0
 
         set = new AVLTree<>();
+        System.out.println(set.add(20));//true
+        System.out.println(set.add(20));//false
         System.out.println(set.add(20));
         System.out.println(set.add(20));
         System.out.println(set.add(20));
@@ -409,10 +421,8 @@ public class AVLTree<E extends Comparable<E>> implements ISortedSet<E> {
         System.out.println(set.add(20));
         System.out.println(set.add(20));
         System.out.println(set.add(20));
-        System.out.println(set.add(20));
-        System.out.println(set.add(20));
-        System.out.println(set.remove(20));
-        System.out.println(set.remove(20));
+        System.out.println(set.remove(20));//true
+        System.out.println(set.remove(20));//false
         System.out.println(set.remove(20));
         System.out.println(set.remove(20));
         System.out.println(set.remove(20));
